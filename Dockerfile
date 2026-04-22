@@ -47,6 +47,10 @@ RUN pip install --upgrade pip \
       diffusers==0.29.0 \
       einops==0.8.2 \
       omegaconf==2.3.0 \
+      pyloudnorm==0.2.0 \
+      pykakasi==2.3.0 \
+      jaconv==0.5.0 \
+      onnx==1.21.0 \
       soundfile==0.13.1 \
       numpy==1.26.4 \
       runpod==1.7.7 \
