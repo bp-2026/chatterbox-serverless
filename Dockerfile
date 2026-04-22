@@ -22,14 +22,17 @@ RUN apt-get update \
 RUN pip install --upgrade pip \
  && pip install 'setuptools<81'
 
-# Re-pin torch to the fleet version. Overrides the 2.8.0 baked into the base
-# image — a bit wasteful on layer size but guarantees identical generation
-# numerics vs m1/m2/m4.
+# Re-pin torch to the fleet version (2.6.0) and torchvision to the matching
+# 0.21.0 so transformers' image-model lazy imports don't trip
+# `torchvision::nms does not exist`. Overrides the 2.8.0 triplet baked into
+# the base image — a bit wasteful on layer size but guarantees identical
+# generation numerics vs m1/m2/m4.
 RUN pip install --index-url https://download.pytorch.org/whl/cu124 \
-      torch==2.6.0 torchaudio==2.6.0
+      torch==2.6.0 torchaudio==2.6.0 torchvision==0.21.0
 
 RUN pip install \
       chatterbox-tts==0.1.7 \
+      transformers==5.2.0 \
       soundfile==0.13.1 \
       numpy==1.26.4 \
       runpod==1.7.7
