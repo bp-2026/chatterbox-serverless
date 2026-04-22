@@ -51,8 +51,7 @@ RUN pip uninstall -y torch torchvision torchaudio 2>&1 | tail -3 \
       orjson python-multipart pydantic-settings pydantic-extra-types \
       fastar ffmpy groovy invoke tqdm-loggable rignore \
       2>&1 | tail -5 \
- && pip cache purge \
- && rm -rf /root/.cache/pip
+ && rm -rf /root/.cache/pip /tmp/*
 
 # Pre-download both model variants (runs on CPU — we only care about weight
 # files landing in HF_HOME, which ships with the image).
