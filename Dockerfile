@@ -16,6 +16,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+# Uninstall the base image's torch 2.8 + pip junk drawer FIRST so we don't
+# carry both triplets in a single layer (saves ~4 GB of compressed pull).
+RUN pip uninstall -y torch torchvision torchaudio || true
+RUN pip cache purge || true
+
 # perth (a chatterbox transitive dep) imports pkg_resources, removed in
 # setuptools >=81. Pin it first so the downstream install doesn't pull a
 # breaking newer wheel.
@@ -24,9 +29,7 @@ RUN pip install --upgrade pip \
 
 # Re-pin torch to the fleet version (2.6.0) and torchvision to the matching
 # 0.21.0 so transformers' image-model lazy imports don't trip
-# `torchvision::nms does not exist`. Overrides the 2.8.0 triplet baked into
-# the base image — a bit wasteful on layer size but guarantees identical
-# generation numerics vs m1/m2/m4.
+# `torchvision::nms does not exist`.
 RUN pip install --index-url https://download.pytorch.org/whl/cu124 \
       torch==2.6.0 torchaudio==2.6.0 torchvision==0.21.0
 
@@ -36,6 +39,29 @@ RUN pip install \
       soundfile==0.13.1 \
       numpy==1.26.4 \
       runpod==1.7.7
+
+# Drop chatterbox's transitive dev/web-demo deps we never touch at runtime.
+# gradio alone is ~200 MB, pre-commit ~50 MB, whisper ~80 MB. Lose them and
+# the compressed layer gets meaningfully smaller.
+RUN pip uninstall -y \
+      gradio gradio-client \
+      pre-commit \
+      openai-whisper \
+      fastapi fastapi-cli fastapi-cloud-cli safehttpx \
+      uvicorn uvloop httptools watchfiles websockets \
+      rich rich-toolkit typer typer-slim \
+      inquirerpy pfzy prompt_toolkit shellingham \
+      virtualenv nodeenv identify cfgv \
+      sentry-sdk semantic-version \
+      paramiko bcrypt pynacl \
+      boto3 botocore s3transfer jmespath \
+      aiohttp aiohttp-retry aiosignal aiofiles aiohappyeyeballs aiodns \
+      orjson starlette itsdangerous \
+      python-multipart python-dotenv pydantic-settings pydantic-extra-types \
+      fastar ffmpy groovy invoke tqdm-loggable rignore \
+      2>&1 | tail -3
+
+RUN pip cache purge || true
 
 # Pre-download both model variants to /root/.cache/huggingface. This bakes
 # ~3.5 GB of weights into the image layer so cold starts are fast. Run
