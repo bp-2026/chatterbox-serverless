@@ -1,0 +1,6 @@
+# Only ship the bits the handler actually needs.
+# Everything else stays out of the build context so secrets / local test
+# output can't accidentally slip into the image layer.
+*
+!Dockerfile
+!handler.py
